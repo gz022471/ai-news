@@ -1,0 +1,23 @@
+name: AI Agent 每日晚间新闻
+
+on:
+  schedule:
+    # 每天 20:00 北京时间 (UTC+8 → 12:00 UTC)
+    - cron: "0 12 * * *"
+  workflow_dispatch:  # 允许手动触发测试
+
+jobs:
+  generate-news:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      
+      - name: 生成晚间新闻
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        run: python ai_news.py
