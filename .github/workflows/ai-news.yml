@@ -18,4 +18,5 @@ jobs:
           ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
           WXPUSHER_TOKEN: ${{ secrets.WXPUSHER_TOKEN }}
           WXPUSHER_UID: ${{ secrets.WXPUSHER_UID }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
         run: python ai_news.py
