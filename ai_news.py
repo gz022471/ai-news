@@ -60,38 +60,38 @@ def format_articles(articles: list, count: int, label: str) -> str:
 SECTIONS = [
     {
         "title": "🌍 国际热点", "count": 10,
-        "endpoint": "top-headlines",
-        "params": {"language": "en", "pageSize": "20"},
-        "desc": "国际大事件"
+        "endpoint": "everything",
+        "params": {"q": "world OR global OR international", "language": "en", "pageSize": "20", "sortBy": "publishedAt"},
+        "desc": "全球重大新闻"
     },
     {
         "title": "🇨🇳 国内热点", "count": 10,
-        "endpoint": "top-headlines",
-        "params": {"country": "cn", "pageSize": "20"},
+        "endpoint": "everything",
+        "params": {"q": "中国 OR 国内", "language": "zh", "pageSize": "20", "sortBy": "publishedAt"},
         "desc": "中国热点新闻"
     },
     {
         "title": "🏙️ 兰州本地", "count": 10,
         "endpoint": "everything",
-        "params": {"q": "兰州", "language": "zh", "pageSize": "20", "sortBy": "publishedAt"},
+        "params": {"q": "兰州市", "language": "zh", "pageSize": "20", "sortBy": "publishedAt"},
         "desc": "兰州市本地新闻"
     },
     {
         "title": "🤖 AI Agent", "count": 5,
         "endpoint": "everything",
-        "params": {"q": '"AI Agent" OR "人工智能代理" OR "智能体"', "language": "zh", "pageSize": "15", "sortBy": "publishedAt"},
-        "desc": "AI Agent/智能体领域动态"
+        "params": {"q": "\"AI Agent\" OR \"智能体\" OR \"人工智能代理\"", "pageSize": "15", "sortBy": "publishedAt"},
+        "desc": "AI Agent/智能体动态"
     },
     {
         "title": "⚽ 体育热点", "count": 5,
-        "endpoint": "top-headlines",
-        "params": {"category": "sports", "language": "zh", "pageSize": "15"},
+        "endpoint": "everything",
+        "params": {"q": "sports OR football OR basketball OR 体育", "pageSize": "15", "sortBy": "publishedAt"},
         "desc": "全球体育热点"
     },
     {
         "title": "🏠 兰州二手房", "count": 1,
         "endpoint": "everything",
-        "params": {"q": "兰州 二手房 房价 城关区 七里河区 安宁区", "language": "zh", "pageSize": "10", "sortBy": "publishedAt"},
+        "params": {"q": "兰州 房价 OR 二手房 OR 楼盘", "language": "zh", "pageSize": "10", "sortBy": "publishedAt"},
         "desc": "兰州各区二手房行情"
     },
 ]
