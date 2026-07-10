@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""每日6大板块新闻 - NewsAPI实时搜索 + 豆包格式化 + WxPusher推送"""
+"""每日6大板块新闻 - NewsAPI实时 + 豆包知识库 + WxPusher推送"""
 import os, json, time
 from datetime import datetime
 from urllib.request import Request, urlopen
@@ -32,8 +32,7 @@ def wxpush(content: str) -> bool:
     return resp.get("code") == 1000
 
 def fetch_newsapi(endpoint: str, params: dict) -> list:
-    """调用NewsAPI获取新闻"""
-    qs = "&".join(f"{k}={quote(str(v), safe='')}" for k, v in params.items())
+    qs = "&".join(f"{k}={quote(str(v))}" for k, v in params.items())
     url = f"https://newsapi.org/v2/{endpoint}?{qs}&apiKey={NEWS_KEY}"
     try:
         resp = json.loads(urlopen(Request(url, headers={
@@ -41,59 +40,47 @@ def fetch_newsapi(endpoint: str, params: dict) -> list:
         }), timeout=30).read())
         if resp["status"] == "ok":
             return resp.get("articles", [])[:20]
-        else:
-            print(f"    NewsAPI错误: {resp.get('message', 'unknown')}")
+        print(f"    NewsAPI({resp.get('message','?')})")
     except Exception as e:
-        print(f"    NewsAPI失败: {e}")
+        print(f"    NewsAPI({e})")
     return []
 
-def format_articles(articles: list, count: int, label: str) -> str:
-    """将文章列表转为豆包可用的文本"""
+def format_articles(articles: list, count: int) -> str:
     lines = []
-    for i, a in enumerate(articles[:count]):
-        title = a.get("title", "") or "无标题"
-        desc = (a.get("description") or "")[:80]
+    for i, a in enumerate(articles[:count*2]):
+        title = (a.get("title") or "无标题").replace("\n", " ")
+        desc = (a.get("description") or "")[:80].replace("\n", " ")
         lines.append(f"{i+1}. {title} | {desc}")
     return "\n".join(lines)
 
-# 6大板块定义
+# 板块定义: (标题, 数量, 来源, 提示词/参数)
 SECTIONS = [
-    {
-        "title": "🌍 国际热点", "count": 10,
+    # NewsAPI 板块
+    ("🌍 国际热点", 10, "newsapi", {
         "endpoint": "everything",
         "params": {"q": "world OR global OR international", "language": "en", "pageSize": "20", "sortBy": "publishedAt"},
-        "desc": "全球重大新闻"
-    },
-    {
-        "title": "🇨🇳 国内热点", "count": 10,
+        "desc": "过去24小时全球最重要的国际大事"
+    }),
+    ("⚽ 体育热点", 5, "newsapi", {
         "endpoint": "everything",
-        "params": {"q": "中国 OR 国内", "language": "zh", "pageSize": "20", "sortBy": "publishedAt"},
-        "desc": "中国热点新闻"
-    },
-    {
-        "title": "🏙️ 兰州本地", "count": 10,
+        "params": {"q": "sports OR football OR basketball OR tennis OR F1", "pageSize": "15", "sortBy": "publishedAt"},
+        "desc": "体育热点新闻（足球篮球网球F1电竞等）"
+    }),
+    ("🤖 AI Agent", 5, "newsapi", {
         "endpoint": "everything",
-        "params": {"q": "兰州市", "language": "zh", "pageSize": "20", "sortBy": "publishedAt"},
-        "desc": "兰州市本地新闻"
-    },
-    {
-        "title": "🤖 AI Agent", "count": 5,
-        "endpoint": "everything",
-        "params": {"q": "\"AI Agent\" OR \"智能体\" OR \"人工智能代理\"", "pageSize": "15", "sortBy": "publishedAt"},
-        "desc": "AI Agent/智能体动态"
-    },
-    {
-        "title": "⚽ 体育热点", "count": 5,
-        "endpoint": "everything",
-        "params": {"q": "sports OR football OR basketball OR 体育", "pageSize": "15", "sortBy": "publishedAt"},
-        "desc": "全球体育热点"
-    },
-    {
-        "title": "🏠 兰州二手房", "count": 1,
-        "endpoint": "everything",
-        "params": {"q": "兰州 房价 OR 二手房 OR 楼盘", "language": "zh", "pageSize": "10", "sortBy": "publishedAt"},
-        "desc": "兰州各区二手房行情"
-    },
+        "params": {"q": '"AI agent" OR "artificial intelligence" OR LLM OR chatbot', "pageSize": "15", "sortBy": "publishedAt"},
+        "desc": "AI Agent/大模型/人工智能领域近期重要动态"
+    }),
+    # 豆包直接生成板块
+    ("🇨🇳 国内热点", 10, "doubao", {
+        "prompt": "请列出近期中国10条最重要的国内热点新闻。每条格式：<b>【标题】</b> — 简述（20字内）<br/><br/>如果不知道今天的，用最近一周的。直接输出。",
+    }),
+    ("🏙️ 兰州本地", 10, "doubao", {
+        "prompt": "请列出近期兰州市10条本地民生、交通、政策、城建、天气方面的热点。每条：<b>【标题】</b> — 简述（20字内）<br/><br/>直接输出。",
+    }),
+    ("🏠 兰州二手房", 1, "doubao", {
+        "prompt": "根据你的知识，汇总兰州三个区二手房行情：<br/><b>城关区</b>：参考均价约X元/㎡，热门板块：XX<br/><b>七里河区</b>：参考均价约X元/㎡，热门板块：XX<br/><b>安宁区</b>：参考均价约X元/㎡，热门板块：XX<br/>注明：数据为AI知识库参考。",
+    }),
 ]
 
 CSS = ("body{margin:0;padding:0;font-size:14px;color:#e0e0e0;background:#0d1117}"
@@ -104,25 +91,22 @@ CSS = ("body{margin:0;padding:0;font-size:14px;color:#e0e0e0;background:#0d1117}
        "border-left:3px solid #ffd700;padding-left:8px}"
        ".ft{text-align:center;color:#555;font-size:10px;padding:10px}")
 
-def generate_section(sec: dict) -> tuple:
-    """获取新闻 + 豆包格式化"""
-    articles = fetch_newsapi(sec["endpoint"], sec["params"])
+def generate_newsapi(title: str, count: int, cfg: dict) -> tuple:
+    articles = fetch_newsapi(cfg["endpoint"], cfg["params"])
     if not articles:
-        return sec["title"], "<span style='color:#888'>暂无实时数据</span>"
-    
-    raw = format_articles(articles, sec["count"] * 2, sec["title"])
-    prompt = f"""请根据以下新闻源，生成{sec['count']}条{sec['desc']}汇总。
-每条格式：<b>【标题】</b> — 简述（20字内）<br/><br/>
+        return title, "<span style='color:#888'>暂无实时数据，稍后更新</span>"
+    raw = format_articles(articles, count)
+    prompt = f"""精选{cfg['desc']}，生成{count}条。
+格式：<b>【标题】</b> — 简述<br/><br/>
 新闻源：
 {raw}
+只输出最重要的{count}条，按重要性排序。直接输出HTML。"""
+    return title, doubao(prompt, max_tokens=1500)
 
-要求：精选最重要的{sec['count']}条，按重要性排序。直接输出HTML。"""
-    
-    try:
-        result = doubao(prompt, max_tokens=1500)
-        return sec["title"], result
-    except Exception as e:
-        return sec["title"], f"<span style='color:#f66'>⚠️ {e}</span>"
+def generate_doubao(title: str, count: int, cfg: dict) -> tuple:
+    today = datetime.now().strftime("%Y-%m-%d")
+    prompt = f"今天日期：{today}。\n{cfg['prompt']}"
+    return title, doubao(prompt, max_tokens=1500)
 
 if __name__ == "__main__":
     today = datetime.now().strftime("%Y年%m月%d日")
@@ -130,11 +114,17 @@ if __name__ == "__main__":
 
     results = {}
     with ThreadPoolExecutor(max_workers=3) as pool:
-        futures = {pool.submit(generate_section, s): s for s in SECTIONS}
+        futures = {}
+        for title, count, src, cfg in SECTIONS:
+            if src == "newsapi":
+                futures[pool.submit(generate_newsapi, title, count, cfg)] = title
+            else:
+                futures[pool.submit(generate_doubao, title, count, cfg)] = title
+
         for f in as_completed(futures, timeout=400):
-            title, html = f.result(timeout=200)
-            results[title] = html
-            print(f"  ✅ {title}")
+            t, html = f.result(timeout=200)
+            results[t] = html
+            print(f"  ✅ {t}")
 
     html_head = (f"<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>{CSS}</style>"
                  f"</head><body><h2>📡 {today}</h2>"
@@ -143,9 +133,8 @@ if __name__ == "__main__":
 
     mid = len(SECTIONS) // 2
     html = html_head
-    for i, sec in enumerate(SECTIONS):
-        html += (f'<div class="sec"><div class="st">📌 {sec["title"]}</div>'
-                 f'{results.get(sec["title"], "")}</div>')
+    for i, (title, _, _, _) in enumerate(SECTIONS):
+        html += f'<div class="sec"><div class="st">📌 {title}</div>{results.get(title, "")}</div>'
         if i == mid - 1 or i == len(SECTIONS) - 1:
             html += html_foot
             ok = wxpush(html)
