@@ -40,20 +40,21 @@ TASKS = [
 
 CSS = """
 body{margin:0;padding:0;font-size:14px;color:#e0e0e0;background:#0d1117}
-.header{background:linear-gradient(135deg,#1a1a2e,#16213e);padding:16px;text-align:center;border-bottom:2px solid #ffd700}
-.header h2{color:#ffd700;margin:0;font-size:18px}
-.header p{color:#888;margin:4px 0 0;font-size:12px}
-.section{margin:0;padding:14px 16px;border-bottom:1px solid #21262d}
-.section-title{font-size:15px;font-weight:bold;margin:0 0 10px 0;padding:6px 10px;background:#21262d;border-radius:4px;border-left:3px solid #ffd700}
-.item{margin:6px 0;line-height:1.6}
-.footer{text-align:center;color:#555;font-size:11px;padding:12px}
+h2{color:#ffd700;text-align:center;margin:12px 0 4px;font-size:17px}
+.sub{color:#888;text-align:center;font-size:11px;margin:0 0 10px}
+.sec{margin:0;padding:10px 14px;border-bottom:1px solid #21262d}
+.st{font-size:14px;font-weight:bold;margin:0 0 6px;color:#ffd700;border-left:3px solid #ffd700;padding-left:8px}
+.item{margin:4px 0;line-height:1.5}
+.ft{text-align:center;color:#555;font-size:11px;padding:10px}
 """
 
-TEMPLATE = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><style>{CSS}</style></head><body>
-<div class="header"><h2>📡 {{date}} · 6大板块新闻推送</h2><p>每晚 20:00 自动更新</p></div>
-{{body}}
-<div class="footer">每晚 20:00 自动推送 · 仅供参考</div>
-</body></html>"""
+HEADER = """<div class="sub">{{date}} · 6大板块新闻推送</div>"""
+FOOTER = """<div class="ft">每晚 20:00 自动推送 · AI 聚合 · 仅供参考</div>"""
+
+SECTION_HTML = """<div class="sec">
+<div class="st">📌 {title}</div>
+{content}
+</div>"""
 
 if __name__ == "__main__":
     today = datetime.now().strftime("%Y年%m月%d日")
@@ -79,12 +80,21 @@ if __name__ == "__main__":
                     results[section] = f"⚠️ 本板块暂时无法生成，明天见"
                     print(f"  ❌ {section}: 重试也失败")
 
-    # 拼接所有板块
-    body = ""
-    for title, prompt in TASKS:
+    # 拼接板块，分2条消息防止截断
+    html_head = f"<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>{CSS}</style></head><body><h2>📡 {today}</h2>{HEADER.replace('{{date}}', today)}"
+    html_foot = "</body></html>"
+    
+    mid = len(TASKS) // 2
+    for i, (title, prompt) in enumerate(TASKS):
         content = results.get(title, "生成失败")
-        body += f'<div class="section"><div class="section-title">{title}</div>{content}</div>\n'
-
-    html = TEMPLATE.replace("{{body}}", body).replace("{{date}}", today)
-    wxpush(html)
+        section = SECTION_HTML.format(title=title, content=content)
+        if i == 0:
+            html = html_head
+        html += section
+        if i == mid - 1 or i == len(TASKS) - 1:
+            html += FOOTER + html_foot
+            ok = wxpush(html)
+            print(f"  推送{'✅' if ok else '❌'} 第{i//mid + 1}组 ({i+1}板块)")
+            html = html_head  # reset for next msg
+    
     print("✅ 完成")
