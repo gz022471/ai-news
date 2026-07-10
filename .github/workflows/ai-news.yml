@@ -2,7 +2,6 @@ name: AI Agent 每日晚间新闻
 
 on:
   schedule:
-    # 每天 20:00 北京时间 (UTC+8 → 12:00 UTC)
     - cron: "0 12 * * *"
   workflow_dispatch:
 
@@ -14,7 +13,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: 生成晚间新闻
+      - name: 生成并推送晚间新闻
         env:
           ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
         run: python ai_news.py

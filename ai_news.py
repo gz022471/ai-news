@@ -1,56 +1,37 @@
 #!/usr/bin/env python3
-"""AI Agent 每日晚间新闻 - 由 GitHub Actions 每天 20:00 运行"""
-import os, json, smtplib
-from email.mime.text import MIMEText
+"""AI Agent 每日晚间新闻 - 由 GitHub Actions 每天 20:00 运行，推送到微信"""
+import os, json
 from datetime import datetime
 from urllib.request import Request, urlopen
 
-# 豆包 API 配置
 ARK_API_KEY = os.environ["ARK_API_KEY"]
+ARK_URL = "https://ark.cn-beijing.volces.com/api/v3/chat/completions"
 ENDPOINT_ID = os.environ.get("ARK_ENDPOINT", "ep-m-20260703163123-ll2fh")
-ARK_URL = f"https://ark.cn-beijing.volces.com/api/v3/chat/completions"
-
-EMAIL_TO = os.environ.get("EMAIL_TO", "295129003@qq.com")
-EMAIL_PASS = os.environ.get("EMAIL_PASS", "")
+PUSHPLUS_TOKEN = os.environ["PUSHPLUS_TOKEN"]
 
 def call_doubao(prompt: str) -> str:
-    """调用豆包 API 生成新闻"""
-    req = Request(
-        ARK_URL,
-        data=json.dumps({
-            "model": ENDPOINT_ID,
-            "messages": [
-                {"role": "system", "content": f"你是专业AI新闻主播。今天是{datetime.now().strftime('%Y年%m月%d日')}。"},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-            "max_tokens": 1200
-        }).encode(),
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {ARK_API_KEY}"
-        }
-    )
-    resp = urlopen(req, timeout=60)
-    data = json.loads(resp.read())
-    return data["choices"][0]["message"]["content"]
+    req = Request(ARK_URL, data=json.dumps({
+        "model": ENDPOINT_ID,
+        "messages": [
+            {"role": "system", "content": f"你是专业AI新闻主播。今天是{datetime.now().strftime('%Y年%m月%d日')}。"},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7, "max_tokens": 1200
+    }).encode(), headers={
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {ARK_API_KEY}"
+    })
+    return json.loads(urlopen(req, timeout=60).read())["choices"][0]["message"]["content"]
 
-def send_email(subject: str, body: str):
-    """发送邮件"""
-    if not EMAIL_PASS:
-        print(f"\n{'='*50}\n  {subject}\n{'='*50}\n{body}")
-        return
-    
-    msg = MIMEText(body, "plain", "utf-8")
-    msg["Subject"] = subject
-    msg["From"] = "295129003@qq.com"
-    msg["To"] = EMAIL_TO
-    
-    server = smtplib.SMTP_SSL("smtp.qq.com", 465)
-    server.login("295129003@qq.com", EMAIL_PASS)
-    server.sendmail("295129003@qq.com", [EMAIL_TO], msg.as_string())
-    server.quit()
-    print("✅ 邮件已发送")
+def push_wechat(title: str, content: str):
+    req = Request("http://pushplus.plus/send", data=json.dumps({
+        "token": PUSHPLUS_TOKEN,
+        "title": title,
+        "content": content.replace("\n", "<br>"),
+        "template": "html"
+    }).encode(), headers={"Content-Type": "application/json"})
+    resp = json.loads(urlopen(req, timeout=10).read())
+    print(f"推送: {'✅' if resp.get('code')==200 else resp.get('msg','失败')}")
 
 PROMPT = """请搜索并整理过去24小时内AI Agent（人工智能代理/智能体）领域重大新闻，生成晚间新闻播报。
 
@@ -76,9 +57,5 @@ PROMPT = """请搜索并整理过去24小时内AI Agent（人工智能代理/智
 if __name__ == "__main__":
     today = datetime.now().strftime("%Y年%m月%d日")
     print(f"🕗 生成 {today} AI Agent 晚间新闻...")
-    
     news = call_doubao(PROMPT)
-    subject = f"🤖 AI Agent 晚间新闻 | {today}"
-    
-    send_email(subject, news)
-    print("✅ 完成")
+    push_wechat(f"🤖 AI Agent 晚间新闻 | {today}", news)
