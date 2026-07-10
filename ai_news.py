@@ -47,10 +47,9 @@ def fetch_newsapi(endpoint: str, params: dict) -> list:
 
 def format_articles(articles: list, count: int) -> str:
     lines = []
-    for i, a in enumerate(articles[:count*2]):
-        title = (a.get("title") or "无标题").replace("\n", " ")
-        desc = (a.get("description") or "")[:80].replace("\n", " ")
-        lines.append(f"{i+1}. {title} | {desc}")
+    for i, a in enumerate(articles[:count]):
+        title = (a.get("title") or "无标题")[:100]
+        lines.append(f"{i+1}. {title}")
     return "\n".join(lines)
 
 # 板块定义: (标题, 数量, 来源, 提示词/参数)
@@ -101,12 +100,12 @@ def generate_newsapi(title: str, count: int, cfg: dict) -> tuple:
 新闻源：
 {raw}
 只输出最重要的{count}条，按重要性排序。直接输出HTML。"""
-    return title, doubao(prompt, max_tokens=1500)
+    return title, doubao(prompt, max_tokens=1000)
 
 def generate_doubao(title: str, count: int, cfg: dict) -> tuple:
     today = datetime.now().strftime("%Y-%m-%d")
     prompt = f"今天日期：{today}。\n{cfg['prompt']}"
-    return title, doubao(prompt, max_tokens=1500)
+    return title, doubao(prompt, max_tokens=1000)
 
 if __name__ == "__main__":
     today = datetime.now().strftime("%Y年%m月%d日")
