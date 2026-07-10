@@ -3,6 +3,7 @@
 import os, json, time
 from datetime import datetime
 from urllib.request import Request, urlopen
+from urllib.parse import quote
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 ARK_KEY = os.environ["ARK_API_KEY"]
@@ -32,7 +33,7 @@ def wxpush(content: str) -> bool:
 
 def fetch_newsapi(endpoint: str, params: dict) -> list:
     """调用NewsAPI获取新闻"""
-    qs = "&".join(f"{k}={v}" for k, v in params.items())
+    qs = "&".join(f"{k}={quote(str(v), safe='')}" for k, v in params.items())
     url = f"https://newsapi.org/v2/{endpoint}?{qs}&apiKey={NEWS_KEY}"
     try:
         resp = json.loads(urlopen(Request(url, headers={
