@@ -13,8 +13,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: 生成并推送晚间新闻
+      - name: 生成并推送到微信
         env:
           ARK_API_KEY: ${{ secrets.ARK_API_KEY }}
-          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+          WXPUSHER_TOKEN: ${{ secrets.WXPUSHER_TOKEN }}
+          WXPUSHER_UID: ${{ secrets.WXPUSHER_UID }}
         run: python ai_news.py
