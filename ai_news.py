@@ -22,7 +22,7 @@ def doubao(prompt: str, max_tokens: int = 2000) -> str:
         "Content-Type": "application/json",
         "Authorization": f"Bearer {ARK_KEY}"
     })
-    return json.loads(urlopen(req, timeout=120).read())["choices"][0]["message"]["content"]
+    return json.loads(urlopen(req, timeout=180).read())["choices"][0]["message"]["content"]
 
 def wxpush(content: str) -> bool:
     resp = json.loads(urlopen(Request(WX_URL, data=json.dumps({
@@ -121,8 +121,8 @@ if __name__ == "__main__":
             else:
                 futures[pool.submit(generate_doubao, title, count, cfg)] = title
 
-        for f in as_completed(futures, timeout=400):
-            t, html = f.result(timeout=200)
+        for f in as_completed(futures, timeout=500):
+            t, html = f.result(timeout=300)
             results[t] = html
             print(f"  ✅ {t}")
 
