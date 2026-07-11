@@ -70,13 +70,13 @@ SECTIONS = [
     }),
 ]
 
-CSS = ("body{margin:0;padding:0;font-size:14px;color:#e0e0e0;background:#0d1117}"
-       "h2{color:#ffd700;text-align:center;margin:12px 0 4px;font-size:17px}"
-       ".sub{color:#888;text-align:center;font-size:11px;margin:0 0 10px}"
-       ".sec{margin:0;padding:10px 14px;border-bottom:1px solid #21262d}"
-       ".st{font-size:14px;font-weight:bold;margin:0 0 6px;color:#ffd700;"
-       "border-left:3px solid #ffd700;padding-left:8px}"
-       ".ft{text-align:center;color:#555;font-size:10px;padding:10px}")
+CSS = ("body{margin:0;padding:0;font-size:15px;color:#222;background:#fff}"
+       "h2{color:#1a73e8;text-align:center;margin:14px 0 4px;font-size:18px}"
+       ".sub{color:#999;text-align:center;font-size:12px;margin:0 0 12px}"
+       ".sec{margin:0;padding:10px 14px;border-bottom:1px solid #eee}"
+       ".st{font-size:15px;font-weight:bold;margin:0 0 8px;color:#1a73e8;"
+       "border-left:3px solid #1a73e8;padding-left:8px}"
+       ".ft{text-align:center;color:#bbb;font-size:10px;padding:10px}")
 
 def gen_news(title: str, count: int, cfg: dict) -> tuple:
     articles = fetch_news(cfg["ep"], cfg["p"])
