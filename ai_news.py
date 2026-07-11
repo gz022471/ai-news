@@ -60,13 +60,13 @@ SECTIONS = [
     }),
     # DeepSeek 知识库板块
     ("🇨🇳 国内热点", 10, "ds", {
-        "p": f"请根据你的知识，列出近期中国10条最重要的国内热点新闻（今天是{datetime.now().strftime('%Y-%m-%d')}）。每条：<b>【标题】</b> — 简述（20字内）<br/><br/>直接输出。"
+        "p": f"列出近期中国10条国内热点新闻。每条独占一行，格式：<b>序号. 标题</b><br/>简述（20字内）<br/><br/>今天：{datetime.now().strftime('%Y-%m-%d')}。直接输出HTML。"
     }),
     ("🏙️ 兰州本地", 10, "ds", {
-        "p": f"请列出近期兰州市10条本地民生、交通、政策、城建、天气热点。每条：<b>【标题】</b> — 简述（20字内）<br/><br/>兰州市位于甘肃省，是省会城市。今天日期：{datetime.now().strftime('%Y-%m-%d')}。"
+        "p": f"列出近期兰州市10条本地热点（民生/交通/政策/城建/天气）。每条独占一行，格式：<b>序号. 标题</b><br/>简述（20字内）<br/><br/>兰州是甘肃省会。今天：{datetime.now().strftime('%Y-%m-%d')}。直接输出HTML。"
     }),
     ("🏠 兰州二手房", 1, "ds", {
-        "p": f"根据你的知识，汇总兰州二手房行情（今天{datetime.now().strftime('%Y-%m-%d')}）：<br/><b>城关区</b>：参考均价约X元/㎡<br/><b>七里河区</b>：参考均价约X元/㎡<br/><b>安宁区</b>：参考均价约X元/㎡<br/>注明：AI知识库参考价。"
+        "p": f"汇总兰州二手房行情，每个区独占一行：<br/><br/><b>城关区</b>：均价约X元/㎡，热门板块XX<br/><br/><b>七里河区</b>：均价约X元/㎡，热门板块XX<br/><br/><b>安宁区</b>：均价约X元/㎡，热门板块XX<br/><br/>注明AI参考。今天：{datetime.now().strftime('%Y-%m-%d')}。"
     }),
 ]
 
@@ -83,7 +83,15 @@ def gen_news(title: str, count: int, cfg: dict) -> tuple:
     if not articles:
         return title, "<span style='color:#888'>暂无实时数据</span>"
     src = "\n".join(f"{i+1}. {(a.get('title')or'')[:100]}" for i,a in enumerate(articles[:count]))
-    prompt = f"精选{cfg['d']}，生成{count}条。\n格式：<b>【标题】</b> — 简述\n\n源：\n{src}\n\n只输出最重要的{count}条。"
+    prompt = f"""精选{cfg['d']}，生成{count}条。每条独占一行，用空行分隔：
+格式：
+<b>1. 标题</b><br/>简述（20字内）<br/><br/>
+<b>2. 标题</b><br/>简述（20字内）<br/><br/>
+
+源：
+{src}
+
+只输出最重要的{count}条。直接输出HTML。"""
     return title, ds(prompt, max_tokens=1200)
 
 def gen_ds(title: str, count: int, cfg: dict) -> tuple:
