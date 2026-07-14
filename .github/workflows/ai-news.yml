@@ -1,8 +1,8 @@
 name: AI Agent 每日晚间新闻
 
 on:
-  schedule:
-    - cron: "0 10 * * *"
+  # schedule:  # 已暂停每日推送
+  #   - cron: "0 10 * * *"
   workflow_dispatch:
 
 jobs:
